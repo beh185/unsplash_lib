@@ -6,13 +6,28 @@
 # ======== # Import Modules # ======== #
 try:
     from os import system, path, name
-    from requests import get, ConnectionError, ReadTimeout
+    from requests import get, post ,ConnectionError, ReadTimeout
     from urllib.request import urlretrieve
     from urllib.error import URLError
 except ImportError:
     exit("[+] Please Install the required modules by running setup.py file!")
 
 # =========== # Functions # =========== #
+
+# ======== # Checking for http errors # ======== #
+def __check_http_error__(respond):
+    if(respond.status_code == 400):
+        exit("[400 Error] The request was unacceptable, often due to missing a required parameter")
+    elif(respond.status_code == 401):
+        exit("[401 Error] Invalid Access Token")
+    elif(respond.status_code == 403):
+        exit("[403 Error] Missing permissions to perform request")
+    elif(respond.status_code == 404):
+        exit("[404 Error] The requested resource doesn't exist")
+    elif(respond.status_code == 500 or respond.status_code == 503):
+        exit(f"[{respond.status_code} Error] Something went wrong on unsplash's end")
+    else:
+        exit(f"[{respond.status_code} Error] Something went wrong")
 
 # ======== # Downloading Images results for a query. # ======== #
 def search_photo(client_id = str(), query = str(), page = int(), per_page = int(), order_by = str(), collections = str(), content_filter = str(), color = str(), orientation = str(), _DownloadImg=True, _FileName: str = 'S-image', _Path = str()):
@@ -50,20 +65,9 @@ def search_photo(client_id = str(), query = str(), page = int(), per_page = int(
     except ReadTimeout:
         exit('Time out reached')
         
-# ======== # Checking for errors # ======== #
+    # ======== # Checking for http errors # ======== #
     if(JsonImg.status_code != 200):
-        if(JsonImg.status_code == 400):
-            exit("[400 Error] The request was unacceptable, often due to missing a required parameter")
-        elif(JsonImg.status_code == 401):
-            exit("[401 Error] Invalid Access Token")
-        elif(JsonImg.status_code == 403):
-            exit("[403 Error] Missing permissions to perform request")
-        elif(JsonImg.status_code == 404):
-            exit("[404 Error] The requested resource doesn't exist")
-        elif(JsonImg.status_code == 500 or JsonImg.status_code == 503):
-            exit(f"[{JsonImg.status_code} Error] Something went wrong on unsplash's end")
-        else:
-            exit(f"[{JsonImg.status_code} Error] Something went wrong")
+        __check_http_error__(JsonImg)
     else:
         JsonImg = JsonImg.json()
         
@@ -119,20 +123,9 @@ def download_collection(client_id = str(), id = str(), page = int, per_page = in
     except ReadTimeout:
         exit('Time out reached')
     
-    # ======== # Checking for errors # ======== #
+    # ======== # Checking for http errors # ======== #
     if(JsonImg.status_code != 200):
-        if(JsonImg.status_code == 400):
-            exit("[400 Error] The request was unacceptable, often due to missing a required parameter")
-        elif(JsonImg.status_code == 401):
-            exit("[401 Error] Invalid Access Token")
-        elif(JsonImg.status_code == 403):
-            exit("[403 Error] Missing permissions to perform request")
-        elif(JsonImg.status_code == 404):
-            exit("[404 Error] The requested resource doesn't exist")
-        elif(JsonImg.status_code == 500 or JsonImg.status_code == 503):
-            exit(f"[{JsonImg.status_code} Error] Something went wrong on unsplash's end")
-        else:
-            exit(f"[{JsonImg.status_code} Error] Something went wrong")
+        __check_http_error__(JsonImg)
     else:
         JsonImg = JsonImg.json()
         
@@ -189,24 +182,94 @@ def get_collections_id(client_id = str(), query = str(), page = int(), per_page 
     except ReadTimeout:
         exit('Time out reached')
     
-    # ======== # Checking for errors # ======== #
-    if(JsonImg.status_code != 200):
-        if(JsonImg.status_code == 400):
-            exit("[400 Error] The request was unacceptable, often due to missing a required parameter")
-        elif(JsonImg.status_code == 401):
-            exit("[401 Error] Invalid Access Token")
-        elif(JsonImg.status_code == 403):
-            exit("[403 Error] Missing permissions to perform request")
-        elif(JsonImg.status_code == 404):
-            exit("[404 Error] The requested resource doesn't exist")
-        elif(JsonImg.status_code == 500 or JsonImg.status_code == 503):
-            exit(f"[{JsonImg.status_code} Error] Something went wrong on unsplash's end")
-        else:
-            exit(f"[{JsonImg.status_code} Error] Something went wrong")
+    # ======== # Checking for http errors # ======== #
+    if(JsonData.status_code != 200):
+        __check_http_error__(JsonData)
     else:
-        JsonImg = JsonImg.json()
+        JsonData = JsonData.json()
     
+    # ======= # Returning collection id # ======= #
     id_list : list = list()
     for i in range(per_page):
         id_list.append(JsonData['results'][i]['id'])
     return(id_list)
+
+# ======== # Get a single page of user results for a query # ======== #
+def search_users(client_id = str(), query = str(), page = int(), per_page = int()):
+    payload = {
+        'client_id': client_id,
+        'query':query,
+        'page': page,
+        'per_page':per_page}
+    # ======== # Making copy to prevent RuntimeError: dictionary changed size during iteration # ======== #
+    PayLoad = payload.copy()
+
+    # ====== # Removing values that user didn't specified # ====== #
+    for key, value in payload.items():
+        if (value == '' or value == 0):
+            PayLoad.pop(key)
+    
+    # ======== # Checking requirement var # ======== #
+    if ('client_id' not in PayLoad.keys()):
+        exit('download_collection() missing 1 required positional argument. Please specify client_id')
+    if ('query' not in PayLoad.keys()):
+        exit('download_collection() missing 1 required positional argument. Please specify query')
+    
+    unsplash_api = 'https://api.unsplash.com/search/users'
+    
+    try:
+        JsonData = get(unsplash_api, allow_redirects=True, timeout=25, params=PayLoad)
+    except ConnectionError:
+        exit("Connection Failed. It's might because of your network connection")
+    except KeyboardInterrupt:
+        exit('\nOperation canceled by user')
+    except ReadTimeout:
+        exit('Time out reached')
+    
+    # ======== # Checking for http errors # ======== #
+    if(JsonData.status_code != 200):
+        __check_http_error__(JsonData)
+    else:
+        JsonData = JsonData.json()
+    
+    return JsonData['results']
+
+# ======= # Create a new collection. This requires the write_collections scope that can be activated on your api.unsplash.com account # ======= #
+def create_collection(client_id = str(), title = str(), description = str(), private = False):
+    payload = {
+        'client_id': client_id,
+        'title': title,
+        'description':description,
+        'private': private}
+    # ======== # Making copy to prevent RuntimeError: dictionary changed size during iteration # ======== #
+    PayLoad = payload.copy()
+
+    # ====== # Removing values that user didn't specified # ====== #
+    for key, value in payload.items():
+        if (value == '' or value == 0):
+            PayLoad.pop(key)
+    
+    # ======== # Checking requirement var # ======== #
+    if ('client_id' not in PayLoad.keys()):
+        exit('download_collection() missing 1 required positional argument. Please specify client_id')
+    if ('title' not in PayLoad.keys()):
+        exit('download_collection() missing 1 required positional argument. Please specify title')
+        
+    unsplash_api = 'https://api.unsplash.com/collections'
+    
+    try:
+        JsonData = post(unsplash_api, allow_redirects=True, timeout=25, params=PayLoad)
+    except ConnectionError:
+        exit("Connection Failed. It's might because of your network connection")
+    except KeyboardInterrupt:
+        exit('\nOperation canceled by user')
+    except ReadTimeout:
+        exit('Time out reached')
+    
+    # ======== # Checking for http errors # ======== #
+    if(JsonData.status_code != 200):
+        __check_http_error__(JsonData)
+    else:
+        JsonData = JsonData.json()
+
+    return JsonData
