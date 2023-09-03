@@ -6,7 +6,7 @@
 # ======== # Import Modules # ======== #
 try:
     from os import system, path, name
-    from requests import get, post ,ConnectionError, ReadTimeout
+    from requests import get, post, put ,ConnectionError, ReadTimeout, Response
     from urllib.request import urlretrieve
     from urllib.error import URLError
 except ImportError:
@@ -17,21 +17,21 @@ except ImportError:
 # ======== # Checking for http errors # ======== #
 def __check_http_error__(respond):
     if(respond.status_code == 400):
-        exit("[400 Error] The request was unacceptable, often due to missing a required parameter")
+        print("[400 Error] The request was unacceptable, often due to missing a required parameter")
     elif(respond.status_code == 401):
-        exit("[401 Error] Invalid Access Token")
+        print("[401 Error] Invalid Access Token")
     elif(respond.status_code == 403):
-        exit("[403 Error] Missing permissions to perform request")
+        print("[403 Error] Missing permissions to perform request")
     elif(respond.status_code == 404):
-        exit("[404 Error] The requested resource doesn't exist")
+        print("[404 Error] The requested resource doesn't exist")
     elif(respond.status_code == 500 or respond.status_code == 503):
-        exit(f"[{respond.status_code} Error] Something went wrong on unsplash's end")
+        print(f"[{respond.status_code} Error] Something went wrong on unsplash's end")
     else:
-        exit(f"[{respond.status_code} Error] Something went wrong")
+        print(f"[{respond.status_code} Error] Something went wrong")
 
 # ======== # Downloading Images results for a query. # ======== #
-def search_photo(client_id = str(), query = str(), page = int(), per_page = int(), order_by = str(), collections = str(), content_filter = str(), color = str(), orientation = str(), _DownloadImg=True, _FileName: str = 'S-image', _Path = str()):
-    payload = {
+def search_photo(client_id:str = str(), query:str = str(), page:int = int(), per_page:int = int(), order_by:str = str(), collections = str(), content_filter = str(), color = str(), orientation = str(), _DownloadImg=True, _FileName: str = 'S-image', _Path: str = str(), pass_errors: bool = False): # type: ignore
+    payload: dict = {
         'client_id': client_id,
         'query': query,
         'page': page,
@@ -42,7 +42,7 @@ def search_photo(client_id = str(), query = str(), page = int(), per_page = int(
         'color': color,
         'orientation': orientation}
     # ======== # Making copy to prevent RuntimeError: dictionary changed size during iteration # ======== #
-    PayLoad = payload.copy()
+    PayLoad: dict = payload.copy()
 
     # ====== # Removing values that user didn't specified # ====== #
     for key, value in payload.items():
@@ -57,7 +57,7 @@ def search_photo(client_id = str(), query = str(), page = int(), per_page = int(
     
     unsplash_api = 'https://api.unsplash.com/search/photos'
     try:
-        JsonImg = get(unsplash_api, allow_redirects=True, timeout=25, params=PayLoad)
+        ResponseData: Response = get(unsplash_api, allow_redirects=True, timeout=25, params=PayLoad)
     except ConnectionError:
         exit("Connection Failed. It's might because of your network connection")
     except KeyboardInterrupt:
@@ -66,10 +66,14 @@ def search_photo(client_id = str(), query = str(), page = int(), per_page = int(
         exit('Time out reached')
         
     # ======== # Checking for http errors # ======== #
-    if(JsonImg.status_code != 200):
-        __check_http_error__(JsonImg)
-    else:
-        JsonImg = JsonImg.json()
+    if(ResponseData.ok == False):
+        if pass_errors == False:
+            exit(__check_http_error__(ResponseData))
+        else:
+            pass
+            return(__check_http_error__(ResponseData))
+    else:        
+        JsonImg: dict = ResponseData.json()
         
     # ======= # Download images# ======= #
     if(_DownloadImg):
@@ -79,12 +83,12 @@ def search_photo(client_id = str(), query = str(), page = int(), per_page = int(
                 exit(f'"{_Path}" is not exist')
 
             if(name == 'nt' and _Path.endswith('\\') == False):
-                _Path = _Path + '\\'
+                _Path: str = _Path + '\\'
             elif(name == 'posix' and _Path.endswith('/') == False):
-                _Path = _Path + '/'
+                _Path: str = _Path + '/'
 
         for i in range(per_page):
-            ImgLink = JsonImg['results'][i]['urls']['full']
+            ImgLink: str = JsonImg['results'][i]['urls']['full'] #type: ignore
             try:
                 urlretrieve(ImgLink, f"{_Path}{_FileName}-{i}.jpg")
             except URLError:
@@ -93,14 +97,14 @@ def search_photo(client_id = str(), query = str(), page = int(), per_page = int(
         return JsonImg
     
 # ========== # Retrieve a collection’s photos. # ========== #
-def download_collection(client_id = str(), id = str(), page = int, per_page = int, orientation = str(), _DownloadImg = True, _FileName = 'C-image', _Path = str()):
-    payload = {
+def download_collection(client_id: str = str(), id = None, page: int = int(), per_page: int = int(), orientation: str = str(), _DownloadImg: bool = True, _FileName: str = 'C-image', _Path: str = str(), pass_errors: bool = False):# type: ignore
+    payload: dict = {
         'client_id': client_id,
         'page': page,
         'per_page': per_page,
         'orientation':orientation}
     # ======== # Making copy to prevent RuntimeError: dictionary changed size during iteration # ======== #
-    PayLoad = payload.copy()
+    PayLoad: dict = payload.copy()
 
     # ====== # Removing values that user didn't specified # ====== #
     for key, value in payload.items():
@@ -110,12 +114,12 @@ def download_collection(client_id = str(), id = str(), page = int, per_page = in
     # ======== # Checking requirement var # ======== #
     if ('client_id' not in PayLoad.keys()):
         exit('download_collection() missing 1 required positional argument. Please specify client_id')
-    if(id == str()):
+    if(id == None):
         exit('download_collection() missing 1 required positional argument. Please specify id')
 
-    unsplash_api = f'https://api.unsplash.com/collections/{str(id)}/photos'
+    unsplash_api: str = f'https://api.unsplash.com/collections/{str(id)}/photos'
     try:
-        JsonImg = get(unsplash_api, allow_redirects=True, timeout=25, params=PayLoad)
+        ResponseData: Response = get(unsplash_api, allow_redirects=True, timeout=25, params=PayLoad)
     except ConnectionError:
         exit("Connection Failed. It's might because of your network connection")
     except KeyboardInterrupt:
@@ -124,10 +128,14 @@ def download_collection(client_id = str(), id = str(), page = int, per_page = in
         exit('Time out reached')
     
     # ======== # Checking for http errors # ======== #
-    if(JsonImg.status_code != 200):
-        __check_http_error__(JsonImg)
+    if(ResponseData.ok == False):
+        if pass_errors == False:
+            exit(__check_http_error__(ResponseData))
+        else:
+            pass
+            return(__check_http_error__(ResponseData))
     else:
-        JsonImg = JsonImg.json()
+        JsonImg: dict = ResponseData.json()
         
     # ======= # Download images# ======= #
     if(_DownloadImg):
@@ -137,11 +145,11 @@ def download_collection(client_id = str(), id = str(), page = int, per_page = in
                 exit(f'"{_Path}" is not exist')
 
             if(name == 'nt' and _Path.endswith('\\') == False):
-                _Path = _Path + '\\'
+                _Path: str = _Path + '\\'
             elif(name == 'posix' and _Path.endswith('/') == False):
-                _Path = _Path + '/'
-        for i in range(per_page):
-            ImgLink = JsonImg[i]['urls']['full']
+                _Path: str = _Path + '/'
+        for i in range(per_page):  # type: ignore
+            ImgLink: str = JsonImg[i]['urls']['full']
             try:
                 urlretrieve(ImgLink, f"{_Path}{_FileName}-{i}.jpg")
             except URLError:
@@ -152,14 +160,14 @@ def download_collection(client_id = str(), id = str(), page = int, per_page = in
         return JsonImg
 
 
-def get_collections_id(client_id = str(), query = str(), page = int(), per_page = int()):
-    payload = {
+def get_collections_id(client_id: str = str(), query: str = str(), page: int = int(), per_page: int = int(), pass_errors: bool = False) -> list:
+    payload: dict = {
         'client_id': client_id,
         'query':query,
         'page': page,
         'per_page':per_page}
     # ======== # Making copy to prevent RuntimeError: dictionary changed size during iteration # ======== #
-    PayLoad = payload.copy()
+    PayLoad: dict = payload.copy()
 
     # ====== # Removing values that user didn't specified # ====== #
     for key, value in payload.items():
@@ -172,9 +180,9 @@ def get_collections_id(client_id = str(), query = str(), page = int(), per_page 
     if ('query' not in PayLoad.keys()):
         exit('download_collection() missing 1 required positional argument. Please specify query')
 
-    unsplash_api = 'https://api.unsplash.com/search/collections'
+    unsplash_api: str = 'https://api.unsplash.com/search/collections'
     try:
-        JsonData = get(unsplash_api, allow_redirects=True, timeout=25, params=PayLoad)
+        ResponseData: Response = get(unsplash_api, allow_redirects=True, timeout=25, params=PayLoad)
     except ConnectionError:
         exit("Connection Failed. It's might because of your network connection")
     except KeyboardInterrupt:
@@ -183,10 +191,14 @@ def get_collections_id(client_id = str(), query = str(), page = int(), per_page 
         exit('Time out reached')
     
     # ======== # Checking for http errors # ======== #
-    if(JsonData.status_code != 200):
-        __check_http_error__(JsonData)
+    if(ResponseData.ok == False):
+        if pass_errors == False:
+            exit(__check_http_error__(ResponseData))
+        else:
+            pass
+            return __check_http_error__(ResponseData) # type: ignore
     else:
-        JsonData = JsonData.json()
+        JsonData: dict = ResponseData.json()
     
     # ======= # Returning collection id # ======= #
     id_list : list = list()
@@ -195,14 +207,14 @@ def get_collections_id(client_id = str(), query = str(), page = int(), per_page 
     return(id_list)
 
 # ======== # Get a single page of user results for a query # ======== #
-def search_users(client_id = str(), query = str(), page = int(), per_page = int()):
-    payload = {
+def search_users(client_id: str = str(), query: str = str(), page: int = int(), per_page: int = int(), pass_errors: bool = False) -> list:
+    payload: dict = {
         'client_id': client_id,
         'query':query,
         'page': page,
         'per_page':per_page}
     # ======== # Making copy to prevent RuntimeError: dictionary changed size during iteration # ======== #
-    PayLoad = payload.copy()
+    PayLoad: dict = payload.copy()
 
     # ====== # Removing values that user didn't specified # ====== #
     for key, value in payload.items():
@@ -215,10 +227,10 @@ def search_users(client_id = str(), query = str(), page = int(), per_page = int(
     if ('query' not in PayLoad.keys()):
         exit('download_collection() missing 1 required positional argument. Please specify query')
     
-    unsplash_api = 'https://api.unsplash.com/search/users'
+    unsplash_api: str = 'https://api.unsplash.com/search/users'
     
     try:
-        JsonData = get(unsplash_api, allow_redirects=True, timeout=25, params=PayLoad)
+        ResponseData: Response = get(unsplash_api, allow_redirects=True, timeout=25, params=PayLoad)
     except ConnectionError:
         exit("Connection Failed. It's might because of your network connection")
     except KeyboardInterrupt:
@@ -227,22 +239,26 @@ def search_users(client_id = str(), query = str(), page = int(), per_page = int(
         exit('Time out reached')
     
     # ======== # Checking for http errors # ======== #
-    if(JsonData.status_code != 200):
-        __check_http_error__(JsonData)
+    if(ResponseData.ok == False):
+        if pass_errors == False:
+            exit(__check_http_error__(ResponseData))
+        else:
+            pass
+            return __check_http_error__(ResponseData) # type: ignore
     else:
-        JsonData = JsonData.json()
+        JsonData: dict = ResponseData.json()
     
     return JsonData['results']
 
 # ======= # Create a new collection. This requires the write_collections scope that can be activated on your api.unsplash.com account # ======= #
-def create_collection(client_id = str(), title = str(), description = str(), private = False):
-    payload = {
+def create_collection(client_id: str = str(), title: str = str(), description: str = str(), private: bool = False, pass_errors: bool = False) -> str:
+    payload: dict = {
         'client_id': client_id,
         'title': title,
         'description':description,
         'private': private}
     # ======== # Making copy to prevent RuntimeError: dictionary changed size during iteration # ======== #
-    PayLoad = payload.copy()
+    PayLoad: dict = payload.copy()
 
     # ====== # Removing values that user didn't specified # ====== #
     for key, value in payload.items():
@@ -255,10 +271,10 @@ def create_collection(client_id = str(), title = str(), description = str(), pri
     if ('title' not in PayLoad.keys()):
         exit('download_collection() missing 1 required positional argument. Please specify title')
         
-    unsplash_api = 'https://api.unsplash.com/collections'
+    unsplash_api: str = 'https://api.unsplash.com/collections'
     
     try:
-        JsonData = post(unsplash_api, allow_redirects=True, timeout=25, params=PayLoad)
+        ResponseData: Response = post(unsplash_api, allow_redirects=True, timeout=25, params=PayLoad)
     except ConnectionError:
         exit("Connection Failed. It's might because of your network connection")
     except KeyboardInterrupt:
@@ -267,9 +283,53 @@ def create_collection(client_id = str(), title = str(), description = str(), pri
         exit('Time out reached')
     
     # ======== # Checking for http errors # ======== #
-    if(JsonData.status_code != 200):
-        __check_http_error__(JsonData)
-    else:
-        JsonData = JsonData.json()
+    if(ResponseData.ok == False):
+        if pass_errors == False:
+            exit(__check_http_error__(ResponseData))
+        else:
+            pass
+            return(__check_http_error__(ResponseData)) # type: ignore
 
-    return JsonData
+    return f'{title} created successfully'
+
+# ======== # Update an existing collection belonging to the logged-in user. This requires the write_collections scope. # ======== #
+def update_collection(client_id: str = str(), id: str = str(), title: str = str(), description: str = str(), private: bool = False, pass_errors: bool = False) -> str:
+    payload: dict = {
+        'client_id': client_id,
+        'title': title,
+        'description':description,
+        'private': private}
+    # ======== # Making copy to prevent RuntimeError: dictionary changed size during iteration # ======== #
+    PayLoad: dict = payload.copy()
+
+    # ====== # Removing values that user didn't specified # ====== #
+    for key, value in payload.items():
+        if (value == '' or value == 0):
+            PayLoad.pop(key)
+    
+    # ======== # Checking requirement var # ======== #
+    if ('client_id' not in PayLoad.keys()):
+        exit('download_collection() missing 1 required positional argument. Please specify client_id')
+    if (id == str()):
+        exit('download_collection() missing 1 required positional argument. Please specify id')
+    
+    unsplash_api: str = f'https://api.unsplash.com/collections/{id}'
+    
+    try:
+        ResponseData: Response = put(unsplash_api, allow_redirects=True, timeout=25, params=PayLoad)
+    except ConnectionError:
+        exit("Connection Failed. It's might because of your network connection")
+    except KeyboardInterrupt:
+        exit('\nOperation canceled by user')
+    except ReadTimeout:
+        exit('Time out reached')
+    
+    # ======== # Checking for http errors # ======== #
+    if(ResponseData.ok == False):
+        if pass_errors == False:
+            exit(__check_http_error__(ResponseData))
+        else:
+            pass
+            return (__check_http_error__(ResponseData)) # type: ignore
+        
+    return 'The collection updated successfully'
