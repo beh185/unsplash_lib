@@ -15,7 +15,7 @@ except ImportError:
 # =========== # Functions # =========== #
 
 # ======== # Checking for http errors # ======== #
-def __check_http_error__(respond):
+def __check_http_error__(respond) -> None:
     if(respond.status_code == 400):
         print("[400 Error] The request was unacceptable, often due to missing a required parameter")
     elif(respond.status_code == 401):
@@ -30,7 +30,24 @@ def __check_http_error__(respond):
         print(f"[{respond.status_code} Error] Something went wrong")
 
 # ======== # Downloading Images results for a query. # ======== #
-def search_photo(client_id:str = str(), query:str = str(), page:int = int(), per_page:int = int(), order_by:str = str(), collections = str(), content_filter = str(), color = str(), orientation = str(), _DownloadImg=True, _FileName: str = 'S-image', _Path: str = str(), pass_errors: bool = False): # type: ignore
+def search_photo(client_id:str = str(), query:str = str(), page:int = int(), per_page:int = int(), order_by:str = str(), collections = str(), content_filter = str(), color = str(), orientation = str(), _DownloadImg=True, _FileName: str = 'S-image', _Path: str = str(), pass_errors: bool = False) -> dict | None: # type: ignore
+    '''Download photos by search results.
+|param     | Description   |    
+---|---|   
+|`client_id`: |  Your Unsplash Access Key. |
+| `query`: |  Search terms. |
+| `page`: |  The page number of the results to download. (Optional; default: 1) |
+| `per_page`: |  The number of images to download per page. (Optional; default: 10)
+| `order_by`: |  The order in which to sort the results. (Optional; default: relevant). Valid values are latest and relevant. |
+| `collections`: |  Collection ID('s) to narrow search. Optional. If multiple, comma-separated. |
+| `content_filter`: |  Limit results by [content safety](https://unsplash.com/documentation#content-safety). (Optional; default: low). Valid values are low and high. |
+| `color`: |  Filter results by color. Optional. Valid values are: black_and_white, black, white, yellow, orange, red, purple, magenta, green, teal, and blue. |
+| `orientation`: |  The orientation of the images to download. |
+| `_DownloadImg`: |  A boolean value indicating whether to download the images. |
+| `_FileName`: |  The name of the file to save the images to. |
+| `_Path`: |  The path to the directory to save the images to. |
+| `_pass_errors` : | If there an error during the process. It won't break the program. It will just skip the process|
+    '''
     payload: dict = {
         'client_id': client_id,
         'query': query,
@@ -97,7 +114,19 @@ def search_photo(client_id:str = str(), query:str = str(), page:int = int(), per
         return JsonImg
     
 # ========== # Retrieve a collection’s photos. # ========== #
-def download_collection(client_id: str = str(), id = None, page: int = int(), per_page: int = int(), orientation: str = str(), _DownloadImg: bool = True, _FileName: str = 'C-image', _Path: str = str(), pass_errors: bool = False):# type: ignore
+def download_collection(client_id: str = str(), id = None, page: int = int(), per_page: int = int(), orientation: str = str(), _DownloadImg: bool = True, _FileName: str = 'C-image', _Path: str = str(), pass_errors: bool = False) -> dict | None:# type: ignore
+    '''Download a collection's photos.
+| param | Description |
+---|---|
+|`client_id`: |  Your Unsplash Access Key. |
+| `id` : | 	The collection's ID. Required. |
+| `page` : | 	Page number to retrieve. (Optional; default: 1) |
+| `per_page` : | 	Number of items per page. (Optional; default: 10) | 
+| `orientation` : | 	Filter by photo orientation. Optional. (Valid values: landscape, portrait, squarish) |
+| `_DownloadImg`: |  A boolean value indicating whether to download the images. |
+| `_FileName`: |  The name of the file to save the images to. |
+| `_Path`: |  The path to the directory to save the images to. |
+| `_pass_errors` : | If there an error during the process. It won't break the program. It will just skip the process|'''
     payload: dict = {
         'client_id': client_id,
         'page': page,
@@ -161,6 +190,15 @@ def download_collection(client_id: str = str(), id = None, page: int = int(), pe
 
 
 def get_collections_id(client_id: str = str(), query: str = str(), page: int = int(), per_page: int = int(), pass_errors: bool = False) -> list:
+    '''You can search for collection and get the collection's id, Then you can use it in download_collection() func to download images
+| param | Description |
+---|---|
+|`client_id`: |  Your Unsplash Access Key. |
+|`query` : | Search terms. |
+| `page`: |  The page number of the results to download. (Optional; default: 1) |
+| `per_page`:  |  The number of images to download per page. (Optional; default: 10) |
+| `_pass_errors` : | If there an error during the process. It won't break the program. It will just skip the process|'''
+    
     payload: dict = {
         'client_id': client_id,
         'query':query,
@@ -207,7 +245,16 @@ def get_collections_id(client_id: str = str(), query: str = str(), page: int = i
     return(id_list)
 
 # ======== # Get a single page of user results for a query # ======== #
-def search_users(client_id: str = str(), query: str = str(), page: int = int(), per_page: int = int(), pass_errors: bool = False) -> list:
+def search_users(client_id: str = str(), query: str = str(), page: int = int(), per_page: int = int(), pass_errors: bool = False) -> list[dict]:
+    '''Search for a user and getting back the results as list that contain a dictionary.
+| param | Description|
+---|---|
+|`client_id`: |  Your Unsplash Access Key. |
+| `query` : |	Search terms.|
+| `page` : | The page number of the results to download. (Optional; default: 1)
+| `per_page` : | The number of images to download per page.  (Optional; default: 10)
+| `_pass_errors` : | If there an error during the process. It won't break the program. It will just skip the process|'''
+
     payload: dict = {
         'client_id': client_id,
         'query':query,
@@ -252,6 +299,15 @@ def search_users(client_id: str = str(), query: str = str(), page: int = int(), 
 
 # ======= # Create a new collection. This requires the write_collections scope that can be activated on your api.unsplash.com account # ======= #
 def create_collection(client_id: str = str(), title: str = str(), description: str = str(), private: bool = False, pass_errors: bool = False) -> str:
+    '''Create a new collection. This requires the `write_collections` permission. Enable it on  Redirect URI & Permissions on your profile.
+| param |	Description |
+---|---|
+|`client_id`: |  Your Unsplash Access Key. |
+| title: |	The title of the collection. (Required.) |
+| description: | 	The collection's description. (Optional.) |
+| private: |	Whether to make this collection private. (Optional; default false). |
+| `_pass_errors`: | If there an error during the process. It won't break the program. It will just skip the process|
+'''
     payload: dict = {
         'client_id': client_id,
         'title': title,
@@ -294,6 +350,15 @@ def create_collection(client_id: str = str(), title: str = str(), description: s
 
 # ======== # Update an existing collection belonging to the logged-in user. This requires the write_collections scope. # ======== #
 def update_collection(client_id: str = str(), id: str = str(), title: str = str(), description: str = str(), private: bool = False, pass_errors: bool = False) -> str:
+    '''Update an existing collection belonging to the logged-in user. This requires the write_collections permission. Enable it on  Redirect URI & Permissions on your profile.
+| param |	Description |
+---|---|
+|`client_id`: |  Your Unsplash Access Key. |
+| title:  |	The title of the collection. (Required.) |
+| description: | 	The collection's description. (Optional.) |
+| private: |	Whether to make this collection private. (Optional; default false). |
+| `_pass_errors`:  |  If there an error during the process. It won't break the program. It will just skip the process|
+    '''
     payload: dict = {
         'client_id': client_id,
         'title': title,
