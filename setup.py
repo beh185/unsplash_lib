@@ -20,7 +20,7 @@ setup(
         keywords='download from unsplash',
         packages=find_packages(),
         include_package_data=True,                                                  
-        install_requires=['requests'],
+        install_requires=['requests', 'tqdm'],
         python_requires='~=3.7',
         classifiers=[
         "Programming Language :: Python :: 3",
