@@ -2,7 +2,7 @@
 
 This Python script allows you to download images from Unsplash. It can be used to download a single image, a collection of images, or all images that match a specific search query.
 
-**Note: This script is still under development and not completed yet**
+🔴**Note: This script is still under development and not completed yet**
 ## Installation
 
 To install the script, run the following command:
