@@ -11,12 +11,12 @@ try:
     from urllib.error import URLError
     from tqdm import tqdm
 except ImportError:
-    exit("[+] Please Install the required modules by running setup.py file!")
+    raise ImportError("[+] One of the required modules is missing. Please Install the required modules by reinstalling the library")
 
 # =========== # Functions # =========== #
 
 # ======== # Checking for http errors # ======== #
-def __check_http_error__(respond) -> None:
+def __check_http_error(respond) -> None:
     if(respond.status_code == 400):
         print("[400 Error] The request was unacceptable, often due to missing a required parameter")
     elif(respond.status_code == 401):
@@ -31,7 +31,7 @@ def __check_http_error__(respond) -> None:
         print(f"[{respond.status_code} Error] Something went wrong")
 
 # ======== # Downloading Images results for a query. # ======== #
-def search_photo(client_id:str = str(), query:str = str(), page:int = int(), per_page:int = int(), order_by:str = str(), collections = str(), content_filter = str(), color = str(), orientation = str(), _DownloadImg=True, _FileName: str = 'S-image', _Path: str = str(), pass_errors: bool = False) -> dict | None | str: # type: ignore
+def search_photo(client_id:str = z, query:str = str(), page:int = int(), per_page:int = int(), order_by:str = str(), collections = str(), content_filter = str(), color = str(), orientation = str(), _DownloadImg=True, _FileName: str = 'S-image', _Path: str = str(), pass_errors: bool = False) -> dict | None | str: # type: ignore
     '''Download photos by search results.
 |param     | Description   |    
 ---|---|   
@@ -101,10 +101,10 @@ def search_photo(client_id:str = str(), query:str = str(), page:int = int(), per
     # ======== # Checking for http errors # ======== #
     if(ResponseData.ok == False):
         if pass_errors == False:
-            raise Exception(__check_http_error__(ResponseData))
+            raise Exception(__check_http_error(ResponseData))
         else:
             pass
-            return(__check_http_error__(ResponseData))
+            return(__check_http_error(ResponseData))
     else:        
         JsonImg: dict = ResponseData.json()
         
@@ -190,10 +190,10 @@ def download_collection(client_id: str = str(), ID = None, page: int = int(), pe
     # ======== # Checking for http errors # ======== #
     if(ResponseData.ok == False):
         if pass_errors == False:
-            raise Exception(__check_http_error__(ResponseData))
+            raise Exception(__check_http_error(ResponseData))
         else:
             pass
-            return(__check_http_error__(ResponseData))
+            return(__check_http_error(ResponseData))
     else:
         JsonImg: dict = ResponseData.json()
         
@@ -277,10 +277,10 @@ def get_collections_id(client_id: str = str(), query: str = str(), page: int = i
     # ======== # Checking for http errors # ======== #
     if(ResponseData.ok == False):
         if pass_errors == False:
-            raise Exception(__check_http_error__(ResponseData))
+            raise Exception(__check_http_error(ResponseData))
         else:
             pass
-            return __check_http_error__(ResponseData) # type: ignore
+            return __check_http_error(ResponseData) # type: ignore
     else:
         JsonData: dict = ResponseData.json()
     
@@ -349,10 +349,10 @@ If the operation was successful, returns a list with dictionary inside that cont
     # ======== # Checking for http errors # ======== #
     if(ResponseData.ok == False):
         if pass_errors == False:
-            raise Exception(__check_http_error__(ResponseData))
+            raise Exception(__check_http_error(ResponseData))
         else:
             pass
-            return __check_http_error__(ResponseData) # type: ignore
+            return __check_http_error(ResponseData) # type: ignore
     else:
         JsonData: dict = ResponseData.json()
     
@@ -418,10 +418,10 @@ return True if the operation was successful and return error message if operatio
     # ======== # Checking for http errors # ======== #
     if(ResponseData.ok == False):
         if pass_errors == False:
-            raise Exception(__check_http_error__(ResponseData))
+            raise Exception(__check_http_error(ResponseData))
         else:
             pass
-            return(__check_http_error__(ResponseData)) # type: ignore
+            return(__check_http_error(ResponseData)) # type: ignore
 
     return True
 
@@ -486,10 +486,10 @@ return True if the operation was successful and return error message if operatio
     # ======== # Checking for http errors # ======== #
     if(ResponseData.ok == False):
         if pass_errors == False:
-            raise Exception(__check_http_error__(ResponseData))
+            raise Exception(__check_http_error(ResponseData))
         else:
             pass
-            return (__check_http_error__(ResponseData)) # type: ignore
+            return (__check_http_error(ResponseData)) # type: ignore
         
     return True
 
@@ -540,10 +540,10 @@ return True if the operation was successful and return error message if operatio
     
     if ResponseData.ok == False:
         if pass_errors == False:
-            raise Exception(__check_http_error__(ResponseData))
+            raise Exception(__check_http_error(ResponseData))
         else:
             pass
-            return(__check_http_error__(ResponseData)) #type: ignore
+            return(__check_http_error(ResponseData)) #type: ignore
     
     return True
 
@@ -611,9 +611,9 @@ Note: If the photo is already in the collection, this action has no effect.
 
     if (ResponseData.ok == False):
         if (pass_errors == False):
-            raise Exception(__check_http_error__(ResponseData))
+            raise Exception(__check_http_error(ResponseData))
         else:
             pass
-            return(__check_http_error__(ResponseData)) #type: ignore
+            return(__check_http_error(ResponseData)) #type: ignore
         
     return True
